@@ -38,22 +38,24 @@ Workflow `.github/workflows/ci.yml` запускает `npm ci`, тесты, pro
 2. Framework: **Next.js**, Root Directory: корень репозитория, Node.js: **24.x**. Команды `npm ci` и `npm run build` заданы в `vercel.json`; Output Directory оставьте стандартной.
 3. Добавьте Environment Variables:
 
-| Переменная                             | Значение                                                                                    |
-| -------------------------------------- | ------------------------------------------------------------------------------------------- |
-| `NEXT_PUBLIC_SUPABASE_URL`             | HTTPS Project URL из `.env`                                                                 |
-| `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` | Publishable key из `.env`                                                                   |
-| `SUPABASE_SECRET_KEY`                  | Secret key из `.env`; только сервер, пометьте Sensitive                                     |
-| `NEXT_PUBLIC_APP_URL`                  | Точный HTTPS origin сайта, например `https://your-project.vercel.app`, без завершающего `/` |
+| Переменная                             | Значение                                                                                                             |
+| -------------------------------------- | -------------------------------------------------------------------------------------------------------------------- |
+| `NEXT_PUBLIC_SUPABASE_URL`             | HTTPS Project URL из `.env`                                                                                          |
+| `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` | Publishable key из `.env`                                                                                            |
+| `SUPABASE_SECRET_KEY`                  | Secret key из `.env`; только сервер, пометьте Sensitive                                                              |
+| `NEXT_PUBLIC_APP_URL`                  | Необязательно на Vercel. Для собственного домена можно задать HTTPS origin, например `https://contracts.example.com` |
 
 `SUPABASE_ACCESS_TOKEN` и пароль PostgreSQL приложению и деплою не нужны. Не переносите их в Vercel. `.env` на GitHub не загружается.
 
-Сборка на Vercel остановится с ошибкой, если переменные отсутствуют, серверный ключ указан вместо публичного или адрес сайта оставлен локальным. При смене публичных переменных нужен новый deployment: Next.js включает их в сборку.
+Для первого деплоя не нужно заранее знать URL: оставьте `NEXT_PUBLIC_APP_URL` незаданным в Vercel. Убедитесь, что включена настройка **Enable access to System Environment Variables**. Приложение использует `VERCEL_PROJECT_PRODUCTION_URL` для production и `VERCEL_URL`/`VERCEL_BRANCH_URL` для адресов текущего deployment. Если в настройку скопирован localhost, на Vercel он игнорируется. Локальный `.env` менять не требуется. [Системные переменные Vercel](https://vercel.com/docs/environment-variables/system-environment-variables)
+
+Сборка остановится, если отсутствуют ключи Supabase, серверный ключ указан вместо публичного или нет ни доверенного адреса Vercel, ни явного HTTPS origin. Произвольные Host/Origin-заголовки не добавляются в доверенные адреса. При смене переменных нужен новый deployment.
 
 4. В **Supabase → Authentication → URL Configuration** установите Site URL в тот же HTTPS origin. В Redirect URLs добавьте точный адрес `https://your-project.vercel.app/auth/callback` и нужный локальный адрес `http://127.0.0.1:3000/auth/callback`.
 5. Включите Email/Password и настройте подтверждение email/SMTP для регистрации реальных пользователей. Проверка временных аккаунтов администратором не подтверждает доставку email.
 6. Запустите первый deployment. После готовности проверьте регистрацию с подтверждением, вход и весь сценарий с двумя сторонами.
 
-Preview deployments должны использовать отдельный тестовый Supabase и собственный корректный `NEXT_PUBLIC_APP_URL`. Не передавайте production secret в недоверенные PR/preview. Если адрес preview не совпадает с `NEXT_PUBLIC_APP_URL`, операции изменения будут отклонены проверкой Origin. Для тестирования удобен постоянный staging-домен; не отключайте эту проверку.
+Preview deployments должны использовать отдельный тестовый Supabase. Адреса preview определяются по системным переменным автоматически; production-домен не становится доверенным для preview автоматически. Не передавайте production secret в недоверенные PR/preview. Для дополнительного staging-домена задайте его HTTPS origin через `NEXT_PUBLIC_APP_URL` только для соответствующего окружения. Защиту Origin отключать не нужно.
 
 ## Ограничения, учтённые для Vercel
 

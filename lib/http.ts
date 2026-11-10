@@ -1,4 +1,5 @@
 import { ZodError } from "zod";
+import { vercelOrigins } from "./app-origin.mjs";
 export class HttpError extends Error {
   constructor(
     message: string,
@@ -31,6 +32,14 @@ export function fail(e: unknown) {
 export function requestOrigin(request: Request) {
   const url = new URL(request.url),
     host = request.headers.get("host");
+  if (process.env.VERCEL === "1") {
+    const trusted = vercelOrigins();
+    return (
+      trusted.find((origin) => new URL(origin).host === host) ||
+      trusted.find((origin) => origin === url.origin) ||
+      trusted[0]
+    );
+  }
   // Next normalizes the internal URL to localhost. Preserve only known loopback Host values.
   if (
     ["localhost", "127.0.0.1", "[::1]"].includes(url.hostname) &&
